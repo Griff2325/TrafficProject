@@ -33,9 +33,9 @@ def load_data():
     """Load and prepare the dataset."""
     df = pd.read_csv('data/processed/cleaned_accidents.csv')
     
-    # Convert timestamp columns with a specific format that includes microseconds
-    df['Start_Time'] = pd.to_datetime(df['Start_Time'], format='mixed')
-    df['End_Time'] = pd.to_datetime(df['End_Time'], format='mixed')
+    # Convert timestamp columns
+    df['Start_Time'] = pd.to_datetime(df['Start_Time'])
+    df['End_Time'] = pd.to_datetime(df['End_Time'])
     
     # Create temporal features
     df['start_hour'] = df['Start_Time'].dt.hour

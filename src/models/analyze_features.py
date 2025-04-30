@@ -21,7 +21,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Set plot style
-plt.style.use('seaborn-v0_8')
+plt.style.use('seaborn')
 sns.set_theme(style="whitegrid")
 sns.set_palette('viridis')
 
@@ -32,8 +32,7 @@ REPORTS_DIR = Path('reports/figures')
 def load_data():
     """Load the processed dataset with features."""
     df = pd.read_csv(DATA_DIR / 'accidents_with_features.csv')
-    # Take a 10% sample for faster processing
-    df = df.sample(frac=0.1, random_state=42)
+    # Use the entire dataset
     return df
 
 def prepare_data(df):

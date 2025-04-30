@@ -36,14 +36,14 @@ def load_cleaned_data(data_path: str) -> pd.DataFrame:
         pd.DataFrame: Loaded dataset
     """
     try:
-        # First read without parsing dates to check the format
+        # First read without parsing dates
         df = pd.read_csv(data_path)
         
-        # Convert datetime columns with mixed format
+        # Convert datetime columns
         datetime_columns = ['Start_Time', 'End_Time', 'Weather_Timestamp']
         for col in datetime_columns:
             if col in df.columns:
-                df[col] = pd.to_datetime(df[col], format='mixed')
+                df[col] = pd.to_datetime(df[col])
         
         logger.info(f"Successfully loaded cleaned data from {data_path}")
         logger.info(f"Dataset shape: {df.shape}")

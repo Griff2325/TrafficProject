@@ -8,11 +8,15 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import logging
+import sys
 
-# Configure logging
+# Configure logging to output to console
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -27,6 +31,7 @@ def load_data(data_path: str) -> pd.DataFrame:
         pd.DataFrame: Loaded dataset
     """
     try:
+        logger.info(f"Attempting to load data from {data_path}")
         df = pd.read_csv(data_path)
         logger.info(f"Successfully loaded data from {data_path}")
         logger.info(f"Dataset shape: {df.shape}")
@@ -89,8 +94,8 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     date_columns = ['Start_Time', 'End_Time', 'Weather_Timestamp']
     for col in date_columns:
         if col in df_clean.columns:
-            # Handle microseconds in the timestamp
-            df_clean[col] = pd.to_datetime(df_clean[col], format='mixed')
+            logger.info(f"Converting {col} to datetime")
+            df_clean[col] = pd.to_datetime(df_clean[col])
     
     # Remove duplicates if any
     duplicates = check_duplicates(df_clean)
@@ -104,27 +109,37 @@ def main():
     """
     Main function to run the data cleaning process.
     """
+    logger.info("Starting data cleaning process...")
+    
     # Define paths
     data_dir = Path('data')
     raw_data_path = data_dir / 'raw' / 'US_Accidents_March23.csv'
     processed_data_path = data_dir / 'processed' / 'cleaned_accidents.csv'
     
+    logger.info(f"Raw data path: {raw_data_path}")
+    logger.info(f"Processed data path: {processed_data_path}")
+    
     # Create processed directory if it doesn't exist
     processed_data_path.parent.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Created processed directory: {processed_data_path.parent}")
     
     try:
         # Load data
+        logger.info("Loading raw data...")
         df = load_data(raw_data_path)
         
         # Check missing values
+        logger.info("Checking missing values...")
         missing_summary = check_missing_values(df)
         
         # Clean data
+        logger.info("Cleaning data...")
         df_clean = clean_data(df)
         
         # Save cleaned data
+        logger.info(f"Saving cleaned data to {processed_data_path}")
         df_clean.to_csv(processed_data_path, index=False)
-        logger.info(f"Cleaned data saved to {processed_data_path}")
+        logger.info(f"Cleaned data saved successfully")
         
     except Exception as e:
         logger.error(f"Error in data cleaning process: {str(e)}")
