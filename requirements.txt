@@ -1,0 +1,32 @@
+# Data Processing
+pandas
+numpy
+scipy
+
+# Geospatial Processing
+geopy
+geopandas
+folium
+shapely
+
+# Visualization
+matplotlib
+seaborn
+plotly
+
+# Statistical Analysis
+statsmodels
+
+# Machine Learning
+scikit-learn
+xgboost
+shap
+imbalanced-learn
+scikit-optimize
+
+# Time Series
+# prophet # Note: Installation can sometimes be tricky, especially on M1. Add back if definitely needed.
+
+# Optional: For potential large data handling
+# dask
+# pyspark 

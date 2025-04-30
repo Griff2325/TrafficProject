@@ -1,0 +1,108 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# Data
+data/raw/*
+data/processed/*
+data/interim/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/interim/.gitkeep
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.feather
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Keep specific notebooks
+!notebooks/*.ipynb
+!notebooks/EDA.ipynb
+!notebooks/feature_engineering.ipynb
+!notebooks/modeling.ipynb
+
+# Reports and outputs
+reports/figures/*
+reports/models/*
+!reports/figures/.gitkeep
+!reports/models/.gitkeep
+*.png
+*.jpg
+*.jpeg
+*.pdf
+!reports/final_figures/*.png
+!reports/final_figures/*.pdf
+
+# Model artifacts
+*.pkl
+*.joblib
+*.model
+*.h5
+*.hdf5
+models/*
+!models/.gitkeep
+
+# Logs and caches
+logs/
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# Temporary files
+tmp/
+temp/
+
+# Keep documentation
+!README.md
+!dataset_description.md
+!project_plan.md
+!project_summary.md
+!requirements.txt 
