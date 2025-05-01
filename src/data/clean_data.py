@@ -90,12 +90,12 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     # Create a copy of the dataframe
     df_clean = df.copy()
     
-    # Convert date/time columns to datetime
+    # Convert date/time columns to datetime using ISO8601 format
     date_columns = ['Start_Time', 'End_Time', 'Weather_Timestamp']
     for col in date_columns:
         if col in df_clean.columns:
             logger.info(f"Converting {col} to datetime")
-            df_clean[col] = pd.to_datetime(df_clean[col])
+            df_clean[col] = pd.to_datetime(df_clean[col], format='ISO8601')
     
     # Remove duplicates if any
     duplicates = check_duplicates(df_clean)

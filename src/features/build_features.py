@@ -43,7 +43,7 @@ def load_cleaned_data(data_path: str) -> pd.DataFrame:
         datetime_columns = ['Start_Time', 'End_Time', 'Weather_Timestamp']
         for col in datetime_columns:
             if col in df.columns:
-                df[col] = pd.to_datetime(df[col])
+                df[col] = pd.to_datetime(df[col], format='ISO8601')
         
         logger.info(f"Successfully loaded cleaned data from {data_path}")
         logger.info(f"Dataset shape: {df.shape}")

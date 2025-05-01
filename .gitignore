@@ -27,45 +27,39 @@ env/
 venv/
 ENV/
 
-# Data
+# --- Data --- 
+# Ignore all content within data subdirectories, except .gitkeep files
+# This prevents committing large datasets.
 data/raw/*
 data/processed/*
 data/interim/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/interim/.gitkeep
-*.csv
-*.xlsx
-*.xls
-*.parquet
-*.feather
+
+# --- Generated Reports/Figures --- 
+# Ignore all content within the figures directory, except .gitkeep
+reports/figures/*
+!reports/figures/.gitkeep
+
+# --- Documentation --- 
+# Ignore the entire docs directory and its contents
+docs/
 
 # Jupyter Notebook
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
-# Keep specific notebooks
-!notebooks/*.ipynb
-!notebooks/EDA.ipynb
-!notebooks/feature_engineering.ipynb
-!notebooks/modeling.ipynb
-
-# Reports and outputs
-reports/figures/*
+# Reports and Models (Keep .gitkeep if present)
 reports/models/*
-!reports/figures/.gitkeep
 !reports/models/.gitkeep
-*.png
-*.jpg
-*.jpeg
-*.pdf
-!reports/final_figures/*.png
-!reports/final_figures/*.pdf
 
-# Model artifacts
+# Model artifacts (Keep .gitkeep in models/ dir if present)
 *.pkl
 *.joblib
 *.model
+*.json # Also ignore model json files, except maybe config
+!models/config.json # Example: Keep a specific config file if needed
 *.h5
 *.hdf5
 models/*
@@ -100,9 +94,11 @@ ehthumbs.db
 tmp/
 temp/
 
-# Keep documentation
+# --- KEEP THESE --- 
+# Keep essential project files (override general rules if necessary)
 !README.md
-!dataset_description.md
-!project_plan.md
-!project_summary.md
-!requirements.txt 
+!requirements.txt
+# Remove previous specific documentation keeps if docs/ is now ignored
+# !dataset_description.md 
+# !project_plan.md
+# !project_summary.md 
