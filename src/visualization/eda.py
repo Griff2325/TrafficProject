@@ -84,7 +84,9 @@ def analyze_temporal_patterns(df):
     # Accidents by day of week
     plt.figure()
     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    df['day_name'] = df['Start_Time'].dt.day_name()
+    # Ensure day_name column exists if not already created
+    if 'day_name' not in df.columns:
+        df['day_name'] = df['Start_Time'].dt.day_name()
     sns.countplot(data=df, x='day_name', order=day_order)
     plt.title('Accidents by Day of Week')
     plt.xlabel('Day of Week')
@@ -98,7 +100,9 @@ def analyze_temporal_patterns(df):
     plt.figure()
     month_order = ['January', 'February', 'March', 'April', 'May', 'June', 
                   'July', 'August', 'September', 'October', 'November', 'December']
-    df['month_name'] = df['Start_Time'].dt.month_name()
+    # Ensure month_name column exists if not already created
+    if 'month_name' not in df.columns:
+        df['month_name'] = df['Start_Time'].dt.month_name()
     sns.countplot(data=df, x='month_name', order=month_order)
     plt.title('Accidents by Month')
     plt.xlabel('Month')
@@ -107,7 +111,7 @@ def analyze_temporal_patterns(df):
     plt.tight_layout()
     plt.savefig(REPORTS_DIR / 'accidents_by_month.png')
     plt.close()
-
+    
     # Accident duration
     plt.figure()
     sns.histplot(data=df, x='duration_minutes', bins=50, kde=True)
@@ -117,6 +121,34 @@ def analyze_temporal_patterns(df):
     plt.xlim(0, 1000)
     plt.savefig(REPORTS_DIR / 'accident_duration.png')
     plt.close()
+    
+    # --- NEW: Heatmap of Accident Counts by Hour and Day of Week --- 
+    print("Generating heatmap of accident counts by hour and day of week...")
+    plt.figure(figsize=(14, 8))
+    
+    # Create pivot table for counts
+    # Group by hour and day_of_week, get size, then unstack day_of_week to columns
+    # Fill NaN with 0 for combinations with no accidents
+    pivot_counts = df.groupby(['start_hour', 'start_day_of_week']).size().unstack(fill_value=0)
+    
+    # Reindex columns to ensure correct day order (0=Monday to 6=Sunday)
+    pivot_counts = pivot_counts.reindex(columns=range(7), fill_value=0)
+    
+    # Plot heatmap
+    sns.heatmap(pivot_counts, cmap='viridis', annot=False) # annot=False as counts can be large
+    
+    # Set ticks and labels
+    days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    plt.xticks(ticks=np.arange(len(days)) + 0.5, labels=days, rotation=0)
+    plt.yticks(rotation=0)
+    plt.title('Number of Accidents by Hour and Day of Week')
+    plt.xlabel('Day of Week')
+    plt.ylabel('Hour of Day')
+    plt.tight_layout()
+    plt.savefig(REPORTS_DIR / 'heatmap_hour_dayofweek_count.png')
+    plt.close()
+    print("Hour vs Day of Week count heatmap generated.")
+    # --- End New Heatmap ---
 
 def analyze_geographical_patterns(df, sample_size=100000):
     """Analyze and visualize geographical patterns in accidents."""
@@ -375,10 +407,13 @@ def analyze_timing_by_month(df):
     # Count accidents by month and area type
     monthly_counts = df.groupby(['start_month', 'Area Type']).size().reset_index(name='count')
     
+    # Define distinct colors
+    palette_colors = {"Urban": "#1f77b4", "Suburban": "#ff7f0e"}
+
     # Create line plot for timing by month (using count)
     plt.figure(figsize=(14, 8))
     
-    # Create line plot
+    # Create line plot with custom palette
     sns.lineplot(
         data=monthly_counts, 
         x='start_month', 
@@ -386,7 +421,8 @@ def analyze_timing_by_month(df):
         hue='Area Type',
         markers=True, 
         dashes=False,
-        linewidth=2.5
+        linewidth=2.5,
+        palette=palette_colors # Added distinct palette
     )
     
     # Add labels and title
@@ -436,11 +472,14 @@ def analyze_timing_by_hour(df):
     
     # Count accidents by hour and area type
     hourly_counts = df.groupby(['start_hour', 'Area Type']).size().reset_index(name='count')
-    
+
+    # Define distinct colors
+    palette_colors = {"Urban": "#1f77b4", "Suburban": "#ff7f0e"}
+
     # Create line plot for timing by hour (using count)
     plt.figure(figsize=(14, 8))
     
-    # Create line plot
+    # Create line plot with custom palette
     sns.lineplot(
         data=hourly_counts, 
         x='start_hour', 
@@ -448,7 +487,8 @@ def analyze_timing_by_hour(df):
         hue='Area Type',
         markers=True, 
         dashes=False,
-        linewidth=2.5
+        linewidth=2.5,
+        palette=palette_colors # Added distinct palette
     )
     
     # Add labels and title
@@ -503,14 +543,18 @@ def analyze_severity_by_month(df):
         aggfunc='mean'
     )
     
+    # Define distinct colors
+    plot_colors = {"Urban": "#1f77b4", "Suburban": "#ff7f0e"}
+
     # Create line plot for severity by month
     plt.figure(figsize=(14, 8))
     
-    # Plot mean severity for each area type
+    # Plot mean severity for each area type with custom colors
     severity_by_month.plot(
         marker='o', 
         linewidth=2.5,
-        ax=plt.gca()
+        ax=plt.gca(),
+        color=[plot_colors.get(col) for col in severity_by_month.columns] # Added distinct colors
     )
     
     # Add labels and title
@@ -526,6 +570,10 @@ def analyze_severity_by_month(df):
     plt.grid(True, alpha=0.3)
     
     plt.tight_layout()
+    # Need to get the legend handle from the axis to ensure it shows correctly
+    ax = plt.gca()
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles=handles, labels=labels, title='Area Type')
     plt.savefig(REPORTS_DIR / 'urban_suburban_severity_by_month.png')
     plt.close()
     
@@ -554,14 +602,18 @@ def analyze_severity_by_hour(df):
         aggfunc='mean'
     )
     
+    # Define distinct colors
+    plot_colors = {"Urban": "#1f77b4", "Suburban": "#ff7f0e"}
+
     # Create line plot for severity by hour
     plt.figure(figsize=(14, 8))
     
-    # Plot mean severity for each area type
+    # Plot mean severity for each area type with custom colors
     severity_by_hour.plot(
         marker='o', 
         linewidth=2.5,
-        ax=plt.gca()
+        ax=plt.gca(),
+        color=[plot_colors.get(col) for col in severity_by_hour.columns] # Added distinct colors
     )
     
     # Add labels and title
@@ -576,6 +628,10 @@ def analyze_severity_by_hour(df):
     plt.grid(True, alpha=0.3)
     
     plt.tight_layout()
+    # Need to get the legend handle from the axis to ensure it shows correctly
+    ax = plt.gca()
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles=handles, labels=labels, title='Area Type')
     plt.savefig(REPORTS_DIR / 'urban_suburban_severity_by_hour.png')
     plt.close()
     
@@ -592,6 +648,57 @@ def analyze_severity_by_hour(df):
     plt.savefig(REPORTS_DIR / 'urban_suburban_severity_by_hour_heatmap.png')
     plt.close()
 
+def analyze_severity_by_day_of_week(df):
+    """Analyze accident severity by day of week for urban vs. suburban areas."""
+    print("Analyzing accident severity by day of week for urban vs. suburban areas...")
+    
+    # Ensure day of week column exists (assuming 0=Monday, 6=Sunday)
+    if 'start_day_of_week' not in df.columns:
+        print("Warning: 'start_day_of_week' column not found. Skipping severity by day of week analysis.")
+        return
+        
+    # Create a pivot table of mean severity by day of week and area type
+    severity_by_dow = df.pivot_table(
+        values='Severity',
+        index='start_day_of_week',
+        columns='Area Type',
+        aggfunc='mean'
+    )
+    
+    # Define distinct colors
+    plot_colors = {"Urban": "#1f77b4", "Suburban": "#ff7f0e"}
+
+    # Create line plot for severity by day of week
+    plt.figure(figsize=(14, 8))
+    
+    # Plot mean severity for each area type with custom colors
+    severity_by_dow.plot(
+        marker='o', 
+        linewidth=2.5,
+        ax=plt.gca(),
+        color=[plot_colors.get(col) for col in severity_by_dow.columns] # Added distinct colors
+    )
+    
+    # Add labels and title
+    plt.title('Mean Accident Severity by Day of Week: Urban vs. Suburban', fontsize=16)
+    plt.xlabel('Day of Week', fontsize=14)
+    plt.ylabel('Mean Severity', fontsize=14)
+    
+    # Set x-axis ticks for days of the week
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    plt.xticks(range(0, 7), days, rotation=45)
+    
+    # Add grid for better readability
+    plt.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    # Need to get the legend handle from the axis to ensure it shows correctly
+    ax = plt.gca()
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles=handles, labels=labels, title='Area Type')
+    plt.savefig(REPORTS_DIR / 'urban_suburban_severity_by_day_of_week.png')
+    plt.close()
+
 def analyze_urban_suburban(df):
     """Run all urban vs. suburban analyses."""
     print("\nStarting Urban vs. Suburban Accident Analysis...")
@@ -602,6 +709,7 @@ def analyze_urban_suburban(df):
     analyze_timing_by_hour(df)
     analyze_severity_by_month(df)
     analyze_severity_by_hour(df)
+    analyze_severity_by_day_of_week(df)
     
     print("Urban vs. Suburban analysis complete.")
 

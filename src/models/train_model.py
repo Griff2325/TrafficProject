@@ -139,10 +139,16 @@ def evaluate_model(model, X_test, y_test):
     # Plot confusion matrix
     plt.figure(figsize=(10, 8))
     cm = confusion_matrix(y_test_1based, y_pred_1based)
-    sns.heatmap(cm, annot=True, fmt='d', cmap='viridis')
+    
+    # Define the axis labels (1-4)
+    axis_labels = [1, 2, 3, 4]
+    
+    # Plot heatmap with custom axis labels
+    sns.heatmap(cm, annot=True, fmt='d', cmap='viridis', 
+                xticklabels=axis_labels, yticklabels=axis_labels)
     plt.title('Confusion Matrix')
-    plt.xlabel('Predicted')
-    plt.ylabel('Actual')
+    plt.xlabel('Predicted Severity')
+    plt.ylabel('Actual Severity')
     plt.tight_layout()
     plt.savefig(REPORTS_DIR / 'confusion_matrix.png')
     plt.close() # Close the plot figure
