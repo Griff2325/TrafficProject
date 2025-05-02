@@ -19,6 +19,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+# Keep .gitignore itself
+# .gitignore
 
 # Virtual Environment
 .env
@@ -28,23 +30,34 @@ venv/
 ENV/
 
 # --- Data --- 
-# Ignore all content within data subdirectories, except .gitkeep files
-# This prevents committing large datasets.
+# Ignore data content by default, but keep specific processed file
 data/raw/*
-data/processed/*
-data/interim/*
 !data/raw/.gitkeep
+# Ignore processed except the main feature file
+data/processed/*
+# !data/processed/accidents_with_features.csv
 !data/processed/.gitkeep
+data/interim/*
 !data/interim/.gitkeep
+data/temporary/*
+
+# Ignore geospatial data content
+data/geospatial/*
+# Use .gitkeep in data/geospatial/ if you want to track the empty dir
 
 # --- Generated Reports/Figures --- 
-# Ignore all content within the figures directory, except .gitkeep
+# Ignore figures content by default
 reports/figures/*
 !reports/figures/.gitkeep
 
 # --- Documentation --- 
-# Ignore the entire docs directory and its contents
-docs/
+# Allow tracking docs directory, but ignore specific files
+# docs/ <-- REMOVED this line
+docs/project_plan.md
+docs/project_summary.md
+docs/poster_guidelines.md
+docs/eda_results.md
+docs/project_completion.md
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -55,14 +68,18 @@ reports/models/*
 !reports/models/.gitkeep
 
 # Model artifacts (Keep .gitkeep in models/ dir if present)
+# Ignore model files by default
 *.pkl
 *.joblib
 *.model
-*.json # Also ignore model json files, except maybe config
-!models/config.json # Example: Keep a specific config file if needed
+*.pth
 *.h5
 *.hdf5
 models/*
+*.json 
+# Keep specific model and config files
+# !models/xgb_model.json
+!models/config.json # Example: Keep a specific config file if needed
 !models/.gitkeep
 
 # Logs and caches
@@ -80,6 +97,7 @@ htmlcov/
 *.swp
 *.swo
 *~
+.cursorrules
 
 # OS specific files
 .DS_Store

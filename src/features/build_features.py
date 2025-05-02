@@ -16,7 +16,10 @@ from typing import List, Dict, Any
 from datetime import datetime
 import holidays
 import warnings
-warnings.filterwarnings('ignore')
+# New imports
+import geopandas as gpd
+from shapely.geometry import Point
+# import time # Removed for full run
 
 # Configure logging
 logging.basicConfig(
@@ -37,16 +40,24 @@ def load_cleaned_data(data_path: str) -> pd.DataFrame:
     """
     try:
         # First read without parsing dates
+        logger.info(f"Loading full cleaned data from {data_path}...")
         df = pd.read_csv(data_path)
+        logger.info(f"Full dataset shape: {df.shape}")
+        
+        # Removed Sampling Logic
         
         # Convert datetime columns
         datetime_columns = ['Start_Time', 'End_Time', 'Weather_Timestamp']
         for col in datetime_columns:
             if col in df.columns:
-                df[col] = pd.to_datetime(df[col], format='ISO8601')
+                # Added error handling for datetime conversion
+                try:
+                    df[col] = pd.to_datetime(df[col], errors='coerce')
+                except Exception as dt_err:
+                    logger.warning(f"Could not parse datetime for column {col}: {dt_err}")
+                    df[col] = pd.NaT # Set to Not a Time on error
         
-        logger.info(f"Successfully loaded cleaned data from {data_path}")
-        logger.info(f"Dataset shape: {df.shape}")
+        logger.info(f"Data loaded successfully")
         return df
     except Exception as e:
         logger.error(f"Error loading cleaned data: {str(e)}")
@@ -152,7 +163,8 @@ def create_road_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def create_location_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Create location-related features."""
+    """Create location-related features, including accurate urban classification."""
+    logger.info("Creating location features...")
     # Region mapping
     region_map = {
         'CT': 'Northeast', 'ME': 'Northeast', 'MA': 'Northeast', 'NH': 'Northeast',
@@ -171,12 +183,90 @@ def create_location_features(df: pd.DataFrame) -> pd.DataFrame:
     }
     df['region'] = df['State'].map(region_map)
     
-    # Urban/rural classification based on population density
-    # This is a simplified version - in practice, you might want to use actual population data
-    urban_states = ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI']
-    df['is_urban'] = df['State'].isin(urban_states).astype(int)
+    # --- Urban/Suburban Classification using GeoPandas --- 
+    logger.info("Performing spatial join for urban classification...")
+    try:
+        # Define path to your urban areas shapefile
+        urban_areas_path = Path('data/geospatial/tl_2020_us_uac20.shp') # Updated path
+        
+        if not urban_areas_path.exists():
+            logger.error(f"Urban areas shapefile not found at: {urban_areas_path}")
+            logger.warning("Skipping accurate urban classification. Falling back to simplified state list.")
+            urban_states = ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI']
+            df['is_urban'] = df['State'].isin(urban_states).astype(int)
+            return df
+
+        # Load the urban areas shapefile
+        urban_gdf = gpd.read_file(urban_areas_path)
+        logger.info(f"Loaded urban areas shapefile with {len(urban_gdf)} features. CRS: {urban_gdf.crs}")
+        
+        # Ensure the urban areas GeoDataFrame uses a projected CRS for accurate spatial operations
+        target_crs = 'EPSG:5070' # Using NAD83 / Conus Albers for US
+        if urban_gdf.crs != target_crs:
+            logger.info(f"Projecting urban areas from {urban_gdf.crs} to {target_crs}...")
+            urban_gdf = urban_gdf.to_crs(target_crs)
+        
+        # Create a GeoDataFrame from the accident coordinates
+        df_geo = df.dropna(subset=['Start_Lng', 'Start_Lat']).copy()
+        geometry = [Point(xy) for xy in zip(df_geo['Start_Lng'], df_geo['Start_Lat'])]
+        # Original CRS is likely WGS84 (EPSG:4326) or NAD83 (EPSG:4269) - check your source data
+        # Assuming NAD83 based on the shapefile CRS
+        accidents_gdf = gpd.GeoDataFrame(df_geo, geometry=geometry, crs="EPSG:4269") 
+        
+        # Project accidents to the same CRS as the urban areas
+        logger.info(f"Projecting accidents to {target_crs}...")
+        accidents_gdf = accidents_gdf.to_crs(target_crs)
+        
+        # Perform the spatial join
+        logger.info("Performing spatial join...")
+        joined_gdf = gpd.sjoin(accidents_gdf, urban_gdf, how='left', predicate='within') # Use predicate instead of op
+        
+        # Determine 'is_urban' based on the UATYP20 column
+        # U = Urbanized Area, C = Urban Cluster. Both are considered urban for this flag.
+        urban_col_name = 'UATYP20' # Correct column name from inspection
+        urban_values = ['U', 'C']   # Correct values for Urbanized Area and Urban Cluster
+        
+        if urban_col_name in joined_gdf.columns:
+            # Check if the point joined and if the type is U or C
+            joined_gdf['is_urban_flag'] = (
+                joined_gdf['index_right'].notna() & 
+                joined_gdf[urban_col_name].isin(urban_values)
+            ).astype(int)
+            logger.info(f"Classifying using column '{urban_col_name}' with values {urban_values}.")
+        else:
+            logger.warning(f"Column '{urban_col_name}' not found in joined data. Using simple presence/absence in any polygon as fallback.")
+            joined_gdf['is_urban_flag'] = joined_gdf['index_right'].notna().astype(int)
+
+        # Merge the 'is_urban_flag' back into the original DataFrame
+        # Keep the original index from accidents_gdf to merge correctly
+        df = df.join(joined_gdf['is_urban_flag'])
+        
+        # Fill NaN values for accidents that had no coordinates or didn't join (assume non-urban: 0)
+        df['is_urban'] = df['is_urban_flag'].fillna(0).astype(int)
+        # Drop the temporary merge column
+        df = df.drop(columns=['is_urban_flag'])
+        
+        logger.info("Urban classification complete.")
+        urban_count = df['is_urban'].sum()
+        logger.info(f"Number of accidents classified as urban: {urban_count} ({urban_count / len(df) * 100:.2f}%)")
+        
+        # Clean up large GeoDataFrames to save memory
+        del urban_gdf, accidents_gdf, joined_gdf, df_geo
+        
+    except ImportError as ie:
+        logger.error(f"GeoPandas or dependencies not found: {ie}")
+        logger.warning("Skipping accurate urban classification. Using simplified state-based method as fallback.")
+        urban_states = ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI']
+        df['is_urban'] = df['State'].isin(urban_states).astype(int)
+    except Exception as e:
+        logger.error(f"Error during urban classification: {str(e)}")
+        logger.warning("Using simplified state-based method as fallback due to error.")
+        urban_states = ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI']
+        df['is_urban'] = df['State'].isin(urban_states).astype(int)
+
+    # --- End Urban/Suburban Classification --- 
     
-    logger.info("Created location features")
+    logger.info("Finished creating location features")
     return df
 
 def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
@@ -206,34 +296,49 @@ def main():
     """Main function to run feature engineering."""
     print("Starting feature engineering...")
     
+    # Removed SAMPLE_RUN_SIZE
+    
     # Define paths
     data_dir = Path('data')
     cleaned_data_path = data_dir / 'processed' / 'cleaned_accidents.csv'
     features_data_path = data_dir / 'processed' / 'accidents_with_features.csv'
     
     try:
+        # Removed timing
         print("Loading data...")
         df = load_cleaned_data(cleaned_data_path)
+        # Removed timing
         
+        # Removed timing
         print("Creating temporal features...")
         df = create_temporal_features(df)
-        
+        # Removed timing
+
+        # Removed timing
         print("Creating weather features...")
         df = create_weather_features(df)
-        
+        # Removed timing
+
+        # Removed timing
         print("Creating road features...")
         df = create_road_features(df)
-        
-        print("Creating location features...")
+        # Removed timing
+
+        # Removed timing
+        print("Creating location features (incl. spatial join)...")
         df = create_location_features(df)
-        
+        # Removed timing and highlight
+
+        # Removed timing
         print("Handling missing values...")
         df = handle_missing_values(df)
+        # Removed timing
         
+        # Removed conditional save - always save now
         print("Saving processed data...")
         df.to_csv(features_data_path, index=False)
         logger.info(f"Processed data with features saved to {features_data_path}")
-        
+
         # Log feature summary
         logger.info(f"Final dataset shape: {df.shape}")
         logger.info("New features created:")
@@ -261,6 +366,8 @@ def main():
     except Exception as e:
         logger.error(f"Error in feature engineering process: {str(e)}")
         raise
+    
+    # Removed total timing print
 
 if __name__ == "__main__":
     main() 

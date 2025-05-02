@@ -9,21 +9,18 @@ TrafficProject/
 ├── data/
 │   ├── raw/                  # Original data files (e.g., US_Accidents_March23.csv)
 │   ├── processed/            # Cleaned and feature-engineered data (e.g., cleaned_accidents.csv, accidents_with_features.csv)
-│   └── interim/              # Intermediate data files (optional)
+│   └── geospatial/           # Shapefiles for geographic analysis (e.g., tl_2020_us_uac20.shp)
 ├── models/                   # Saved model files (e.g., xgb_model.json)
 ├── reports/
 │   └── figures/
 │       └── eda/              # Generated visualizations from EDA, model eval, and feature importance
-├── notebooks/                # Jupyter notebooks (optional, for exploratory analysis)
 ├── src/
 │   ├── data/                 # Data processing scripts (e.g., clean_data.py)
 │   ├── features/             # Feature engineering & importance scripts (e.g., analyze_features.py, feature_importance_analysis.py)
 │   ├── models/               # Model development scripts (e.g., train_model.py)
 │   └── visualization/        # Visualization scripts (e.g., eda.py)
 ├── docs/
-│   ├── model_development.md
-│   ├── project_completion.md
-│   └── poster_guidelines.md
+│   └─── model_development.md
 ├── .venv/                    # Python virtual environment
 ├── requirements.txt          # Python dependencies
 └── README.md                 # Project overview
@@ -31,19 +28,25 @@ TrafficProject/
 
 ## Development Process & Scripts
 
-### 1. Data Cleaning (`src/data/clean_data.py` - *if used*)
+### 1. Data Cleaning (`src/data/clean_data.py`)
 - Loads raw data.
 - Handles missing values, duplicates, or initial inconsistencies.
 - Saves cleaned data (e.g., `data/processed/cleaned_accidents.csv`).
 
-### 2. Feature Engineering (`src/features/analyze_features.py` - *or similar*)
-- **Input:** Cleaned data (`cleaned_accidents.csv`).
-- **Process:** Creates new features:
-    - Temporal: `start_hour`, `start_day_of_week`, `start_month`, `is_weekend`, `is_rush_hour`, `is_holiday`, `time_of_day`, `season`.
-    - Weather: `temperature_category`, `wind_speed_category`, `humidity_category`, `visibility_category`, `weather_severity`.
-    - Road: `is_intersection`, `has_traffic_control`, `is_complex_intersection`, `road_feature_count`.
-    - Location: `is_urban`, `region`.
-- **Output:** Feature-engineered dataset (`data/processed/accidents_with_features.csv`).
+### 2. Feature Engineering (`src/features/build_features.py`)
+
+Feature engineering involves creating new variables from the existing data to improve model performance. Key steps include:
+
+*   **Temporal Features:** Extracted hour, day of week, month, year, season, time of day categories (Morning, Afternoon, etc.), weekend flag, rush hour flag, and holiday flag.
+*   **Duration:** Calculated accident duration in minutes.
+*   **Weather Features:** Created categorical features for temperature, wind speed, humidity, visibility, and precipitation. Added a numerical `weather_severity` score based on `Weather_Condition`.
+*   **Road Features:** Created flags for intersections, traffic controls, complex intersections, and a count of nearby road features (Amenity, Bump, Stop, etc.).
+*   **Location Features:**
+    *   Mapped states to broader US regions (Northeast, Midwest, South, West).
+    *   **Urban/Suburban Classification:** Implemented a more accurate classification using `geopandas` and the [2020 TIGER/Line Urban Areas shapefile](https://www.census.gov/cgi-bin/geo/shapefiles/index.php?year=2020&layergroup=Urban+Areas) (`tl_2020_us_uac20.shp`). This involves performing a spatial join between accident coordinates and urban area polygons. If the shapefile is not found in `data/geospatial/`, the script falls back to a simpler, less accurate state-based estimation. This spatial join significantly increases the runtime of the feature engineering script.
+*   **Missing Value Handling:** Imputed missing numerical weather features using the median value grouped by state and month, falling back to the global median if necessary. Added indicator columns for originally missing weather values.
+
+The final feature set used for modeling contains 75 features.
 
 ### 3. Model Training (`src/models/train_model.py`)
 - **Input:** Feature-engineered data (`accidents_with_features.csv`).
@@ -88,23 +91,23 @@ TrafficProject/
 Classification Report:
               precision    recall  f1-score   support
 
-           1       0.66      0.02      0.04     13473
-           2       0.80      1.00      0.89   1231396
-           3       0.55      0.03      0.06    259868
-           4       0.55      0.00      0.01     40942
+           1       0.66      0.01      0.03     13473
+           2       0.80      0.99      0.89   1231396
+           3       0.54      0.03      0.07    259868
+           4       0.59      0.01      0.01     40942
 
     accuracy                           0.80   1545679
-   macro avg       0.64      0.26      0.25   1545679
+   macro avg       0.65      0.26      0.25   1545679
 weighted avg       0.75      0.80      0.72   1545679
 ```
 *   **Confusion Matrix:** Visualizes prediction accuracy across the 4 severity classes (saved in `reports/figures/eda/`).
 *   **Training Performance Plot:** Shows Training vs. Validation Classification Error (`merror`) over boosting rounds (saved as `training_performance.png` in `reports/figures/eda/`).
 *   **Key Observations:**
     *   The model generally achieves high accuracy (80%) due to the prevalence of the majority class (Severity 2).
-    *   Performance (precision/recall) on minority classes (Severity 1, 3, 4) is typically much lower due to severe class imbalance (Recall: 2% for Sev 1, 3% for Sev 3, <1% for Sev 4).
+    *   Performance (precision/recall) on minority classes (Severity 1, 3, 4) is typically much lower due to severe class imbalance (Recall: ~1% for Sev 1, ~3% for Sev 3, ~1% for Sev 4).
     *   Training and validation error rates track very closely, indicating minimal overfitting according to this metric.
-    *   Final Training Error Rate (`merror`): `~0.20138`
-    *   Final Validation Error Rate (`merror`): `~0.20161`
+    *   Final Training Error Rate (`merror`): `~0.20155`
+    *   Final Validation Error Rate (`merror`): `~0.20181`
 
 ### Feature Importance
 *   SHAP plots (global and per-class) identify the most influential features for the model's predictions overall and for each severity level.
@@ -142,11 +145,6 @@ weighted avg       0.75      0.80      0.72   1545679
    - Develop more sophisticated feature interactions
    - Incorporate additional data sources
    - Create time-series features
-
-3. **Deployment**:
-   - Create API endpoints for model predictions
-   - Implement monitoring and retraining pipeline
-   - Develop user interface for predictions
 
 ## File Structure Changes
 1. Split original `analyze_features.py` into:

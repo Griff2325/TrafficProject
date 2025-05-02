@@ -1,6 +1,8 @@
 # US Traffic Accident Analysis Project
 
-This project analyzes US traffic accident data to identify patterns, correlations, and insights related to the **severity** of accidents. The primary goal is to build and interpret a machine learning model that predicts accident severity (levels 1-4) based on various temporal, geographical, weather, and road conditions.
+This project analyzes US traffic accident data to identify patterns, correlations, and insights related to the **severity** of accidents. The primary goal is to build and interpret a machine learning model that predicts accident severity (levels 1-4) based on various temporal, geographical, weather, and road conditions. Additionally, Exploratory Data Analysis will be used to identify times of the year, week, and day that accidents are most prevelent as well as most severe.
+
+Note that this project was initially run through Jetstream2 on the flavor g3.large; results may be much slower if run on a local machine.
 
 ## Project Structure
 
@@ -9,21 +11,18 @@ TrafficProject/
 ├── data/
 │   ├── raw/                  # Original data files (e.g., US_Accidents_March23.csv)
 │   ├── processed/            # Cleaned and feature-engineered data (e.g., cleaned_accidents.csv, accidents_with_features.csv)
-│   └── interim/              # Intermediate data files (optional)
+│   └── geospatial/           # Shapefiles for geographic analysis (e.g., tl_2020_us_uac20.shp)
 ├── models/                   # Saved model files (e.g., xgb_model.json)
 ├── reports/
 │   └── figures/
 │       └── eda/              # Generated visualizations from EDA, model eval, and feature importance
-├── notebooks/                # Jupyter notebooks (optional, for exploratory analysis)
 ├── src/
 │   ├── data/                 # Data processing scripts (e.g., clean_data.py)
 │   ├── features/             # Feature engineering & importance scripts (e.g., analyze_features.py, feature_importance_analysis.py)
 │   ├── models/               # Model development scripts (e.g., train_model.py)
 │   └── visualization/        # Visualization scripts (e.g., eda.py)
-├── docs/                     # Project documentation
+├── docs/
 │   ├── model_development.md
-│   ├── project_completion.md
-│   └── poster_guidelines.md
 ├── .venv/                    # Python virtual environment
 ├── requirements.txt          # Python dependencies
 └── README.md                 # This file
@@ -34,7 +33,7 @@ TrafficProject/
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url> TrafficProject
+git clone Griff2325/TrafficProject
 cd TrafficProject
 ```
 
@@ -65,29 +64,40 @@ The dataset used in this project is typically `US_Accidents_March23.csv`. Downlo
 
 Place the downloaded file in the `data/raw/` directory.
 
+### 5. Geospatial Data (Required for Accurate Urban/Suburban Classification)
+
+This project uses geographic boundaries to classify accidents as occurring in urban or suburban areas more accurately. You need to download the necessary shapefile from the US Census Bureau:
+
+1.  **Download the Shapefile:** Go to the [2020 TIGER/Line® Shapefiles: Urban Areas](https://www.census.gov/cgi-bin/geo/shapefiles/index.php?year=2020&layergroup=Urban+Areas) page.
+2.  Download the **nationwide** shapefile for "Urban Areas". The direct link might change, but look for `tl_2020_us_uac20.zip` or similar.
+3.  **Unzip the File:** Extract the contents of the downloaded zip file.
+4.  **Place the Files:** Move the extracted files (including `.shp`, `.shx`, `.dbf`, `.prj`, etc.) into the `data/geospatial/` directory within this project.
+The feature engineering script expects the main shapefile to be located at `data/geospatial/tl_2020_us_uac20.shp`.
+
+If the shapefile is not found, the feature engineering script will fall back to a less accurate, state-based estimation for the urban/suburban classification.
+
+### 6. Environment Variables
+
 ## Running the Project
 
 The recommended execution sequence is:
 
-### 1. Data Cleaning (if applicable)
-
-If you have a separate cleaning script (`src/data/clean_data.py`):
+### 1. Data Cleaning
 
 ```bash
 python3 src/data/clean_data.py
 ```
 *   **Input:** `data/raw/US_Accidents_March23.csv`
-*   **Output:** `data/processed/cleaned_accidents.csv` (or similar)
+*   **Output:** `data/processed/cleaned_accidents.csv`
 
 ### 2. Feature Engineering
 
 Run the script to create engineered features:
 
 ```bash
-# Use the appropriate script name if different
 python3 src/features/analyze_features.py
 ```
-*   **Input:** `data/processed/cleaned_accidents.csv` (or similar)
+*   **Input:** `data/processed/cleaned_accidents.csv`
 *   **Output:** Creates `data/processed/accidents_with_features.csv`
 
 ### 3. Model Training and Evaluation
@@ -108,7 +118,7 @@ Analyze the importance of features using the trained model:
 python3 src/features/feature_importance_analysis.py
 ```
 *   **Input:** `data/processed/accidents_with_features.csv` and `models/xgb_model.json`.
-*   **Output:** Generates SHAP and permutation importance plots in `reports/figures/eda/`. Skips specific interaction plots as configured.
+*   **Output:** Generates SHAP and permutation importance plots in `reports/figures/eda/`. Skips unneccesary interaction plots as configured.
 
 ### 5. Exploratory Data Analysis (EDA)
 
@@ -123,10 +133,10 @@ python3 src/visualization/eda.py
 ## Key Analyses Performed
 
 *   **Exploratory Data Analysis (EDA):** Analysis of accident distributions over time (hour, day, month), geography (state, density heatmap), weather patterns, road features, and correlations. Includes specific analysis of intersection features and combinations.
-*   **Urban vs. Suburban Analysis:** Comparison of accident counts and severity patterns between urban and suburban areas based on time of day and month.
-*   **Model Training:** Training an XGBoost classifier to predict accident severity (4 levels), including handling class imbalance.
+*   **Urban vs. Suburban Analysis:** Comparison of accident counts and severity patterns between urban and suburban areas based on time of day, week, and month.
+*   **Model Training:** Training an XGBoost classifier to predict accident severity (4 levels), including an attempt to handle class imbalance.
 *   **Model Evaluation:** Assessing model performance using a classification report and confusion matrix.
-*   **Feature Importance:** Evaluating feature importance using SHAP values (global and per-class) and Permutation Importance. Specific interaction plots are excluded based on configuration.
+*   **Feature Importance:** Evaluating feature importance using SHAP values (global and per-class) and Permutation Importance. Unneccesary interaction plots are excluded based on configuration.
 
 ## Dependencies
 
@@ -156,4 +166,11 @@ Standard contribution guidelines apply (fork, branch, commit, PR).
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details (if available). 
+This project is licensed under the MIT License
+
+## Acknowledgments
+
+- Jetsteam2 through Indiana University for the computing resources provided
+- The University of Tennessee Knoxville
+- Teaching team for COSC426
+- Cursor AI for general assistance through the development process
