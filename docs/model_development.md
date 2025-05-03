@@ -6,10 +6,16 @@ This document outlines the development process of a machine learning model to pr
 ## Project Structure (Current)
 ```
 TrafficProject/
+├── .venv/                    # Python virtual environment (ignored by git)
 ├── data/
-│   ├── raw/                  # Original data files (e.g., US_Accidents_March23.csv)
+│   ├── geospatial/           # Shapefiles for geographic analysis (e.g., tl_2020_us_uac20.shp)
 │   ├── processed/            # Cleaned and feature-engineered data (e.g., cleaned_accidents.csv, accidents_with_features.csv)
-│   └── geospatial/           # Shapefiles for geographic analysis (e.g., tl_2020_us_uac20.shp)
+│   └── raw/                  # Original data files (e.g., US_Accidents_March23.csv)
+├── docs/
+│   ├── dataset_description.md # Description of the dataset columns.
+│   ├── eda_results.md        # Summary of EDA findings (source markdown - ignored by git).
+│   ├── eda_results.pdf       # Generated PDF report of EDA findings.
+│   └── model_development.md  # This file
 ├── models/                   # Saved model files (e.g., xgb_model.json - ignored by git)
 ├── reports/
 │   └── figures/
@@ -19,15 +25,9 @@ TrafficProject/
 │   ├── features/             # Feature engineering & importance scripts (e.g., build_features.py, feature_importance_analysis.py)
 │   ├── models/               # Model development scripts (e.g., train_model.py)
 │   └── visualization/        # Visualization scripts (e.g., eda.py)
-├── docs/
-│   ├── model_development.md  # This file
-│   ├── dataset_description.md # Description of the dataset columns.
-│   ├── eda_results.md        # Summary of EDA findings (source markdown - ignored by git).
-│   └── eda_results.pdf       # Generated PDF report of EDA findings.
-├── .venv/                    # Python virtual environment (ignored by git)
-├── requirements.txt          # Python dependencies
 ├── .gitignore                # Specifies intentionally untracked files
-└── README.md                 # Project overview
+├── README.md                 # Project overview
+└── requirements.txt          # Python dependencies
 ```
 
 ## Development Process & Scripts

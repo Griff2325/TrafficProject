@@ -26,7 +26,8 @@ sns.set_palette('viridis')
 
 # Define paths
 DATA_DIR = Path('data/processed')
-REPORTS_DIR = Path('reports/figures/eda')
+# REPORTS_DIR = Path('reports/figures/eda') # Old path for all figures
+FIGURES_DIR = Path('reports/figures') # Base figures directory
 MODELS_DIR = Path('models')
 
 def load_data():
@@ -162,7 +163,8 @@ def evaluate_model(model, X_test, y_test):
     plt.xlabel('Predicted Severity')
     plt.ylabel('Actual Severity')
     plt.tight_layout()
-    plt.savefig(REPORTS_DIR / 'confusion_matrix.png')
+    FIGURES_DIR.mkdir(parents=True, exist_ok=True) # Ensure base figures dir exists
+    plt.savefig(FIGURES_DIR / 'confusion_matrix.png') # Save to base figures dir
     plt.close() # Close the plot figure
 
 def plot_training_history(evals_result):
@@ -191,13 +193,15 @@ def plot_training_history(evals_result):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(REPORTS_DIR / 'training_performance.png')
+    FIGURES_DIR.mkdir(parents=True, exist_ok=True) # Ensure base figures dir exists
+    plt.savefig(FIGURES_DIR / 'training_performance.png') # Save to base figures dir
     plt.close()
-    print(f"Training performance plot saved to {REPORTS_DIR / 'training_performance.png'}")
+    print(f"Training performance plot saved to {FIGURES_DIR / 'training_performance.png'}")
 
 def main():
     """Main function to run the model training and evaluation."""
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    # REPORTS_DIR.mkdir(parents=True, exist_ok=True) # No longer needed here if FIGURES_DIR is created in functions
+    # We still need the MODELS_DIR created before saving model, done in train_model
     
     print("Loading data...")
     df = load_data()
@@ -217,7 +221,7 @@ def main():
     print("Plotting training history...")
     plot_training_history(evals_result)
     
-    print("Model training and evaluation complete! Check the reports/figures/eda directory for visualizations.")
+    print("Model training and evaluation complete! Check the reports/figures directory for visualizations.") # Updated message
 
 if __name__ == "__main__":
     main() 

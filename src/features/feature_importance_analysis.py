@@ -510,63 +510,59 @@ def analyze_feature_interactions(model, X, feature_cols, top_n=5):
     print("Feature interaction analysis complete.")
 
 def analyze_feature_value_impact(df, feature_cols):
-    """Analyze how specific feature values impact severity."""
-    print("Analyzing impact of feature values on severity...")
+    """Analyze the impact of different feature values on severity.
+    (Currently, this function only prints status messages as plotting was moved to eda.py)
+    """
+    print("Analyzing feature value impact...")
+    # value_impact_dir = REPORTS_DIR / 'feature_value_impact'
+    # value_impact_dir.mkdir(exist_ok=True, parents=True)
     
-    # Create directory for feature value impact plots
-    value_impact_dir = REPORTS_DIR / 'feature_value_impact'
-    value_impact_dir.mkdir(exist_ok=True)
+    # Analyze categorical features like time_of_day, season, weather categories
+    # categorical_features = [
+    #     'time_of_day', 'season', 'temperature_category', 'wind_speed_category',
+    #     'humidity_category', 'visibility_category', 'region'
+    # ]
     
-    # Only keep the time-related heatmaps
-    print("Generating day of week × time of day heatmap...")
+    # for feature in categorical_features:
+    #     if feature in df.columns:
+    #         # plt.figure(figsize=(12, 6))
+    #         # sns.boxplot(data=df, x=feature, y='Severity', palette='viridis')
+    #         # plt.title(f'Severity Distribution by {feature}')
+    #         # plt.xticks(rotation=45, ha='right')
+    #         # plt.tight_layout()
+    #         # plt.savefig(value_impact_dir / f'{feature}_severity_boxplot.png')
+    #         # plt.close()
+    #         pass # Plotting removed
+            
+    # Analyze boolean features
+    # boolean_features = [
+    #     'is_weekend', 'is_rush_hour', 'is_holiday', 'is_intersection', 
+    #     'has_traffic_control', 'is_complex_intersection', 'is_urban'
+    # ]
     
-    # Create pivot table for day of week × time of day
-    if 'start_day_of_week' in df.columns and 'time_of_day' in df.columns:
-        plt.figure(figsize=(14, 8))
+    # for feature in boolean_features:
+    #     if feature in df.columns:
+    #         # plt.figure(figsize=(8, 5))
+    #         # sns.barplot(data=df, x=feature, y='Severity', palette='viridis', ci=None) # ci=None to avoid error bars for binary
+    #         # plt.title(f'Mean Severity by {feature}')
+    #         # plt.xticks([0, 1], ['False', 'True'])
+    #         # plt.tight_layout()
+    #         # plt.savefig(value_impact_dir / f'{feature}_severity_barplot.png')
+    #         # plt.close()
+    #         pass # Plotting removed
+            
+    # Numerical features (use binned plots or scatter if appropriate)
+    # Example: Road feature count
+    # if 'road_feature_count' in df.columns:
+    #     # plt.figure(figsize=(12, 6))
+    #     # sns.boxplot(data=df, x='road_feature_count', y='Severity')
+    #     # plt.title('Severity by Road Feature Count')
+    #     # plt.tight_layout()
+    #     # plt.savefig(value_impact_dir / 'road_feature_count_severity_boxplot.png')
+    #     # plt.close()
+    #     pass # Plotting removed
         
-        # Create pivot table
-        pivot = df.pivot_table(
-            values='Severity',
-            index='start_day_of_week',
-            columns='time_of_day',
-            aggfunc='mean'
-        )
-        
-        # Plot heatmap
-        sns.heatmap(pivot, annot=True, cmap='viridis', fmt='.2f')
-        plt.title('Mean Severity by Day of Week and Time of Day')
-        plt.tight_layout()
-        plt.savefig(value_impact_dir / 'start_day_of_week_time_of_day_heatmap.png')
-        plt.close()
-        print("Day of week × time of day heatmap saved.")
-    else:
-        print("Required columns for day_of_week × time_of_day heatmap not found.")
-    
-    # Create hour × day of week heatmap
-    print("Generating hour × day of week heatmap...")
-    
-    if 'start_hour' in df.columns and 'start_day_of_week' in df.columns:
-        plt.figure(figsize=(14, 8))
-        
-        # Create pivot table
-        hour_dow_pivot = df.pivot_table(
-            values='Severity',
-            index='start_hour',
-            columns='start_day_of_week',
-            aggfunc='mean'
-        )
-        
-        # Plot heatmap
-        sns.heatmap(hour_dow_pivot, annot=True, cmap='viridis', fmt='.2f')
-        plt.title('Mean Severity by Hour and Day of Week')
-        plt.tight_layout()
-        plt.savefig(value_impact_dir / 'start_hour_start_day_of_week_heatmap.png')
-        plt.close()
-        print("Hour × day of week heatmap saved.")
-    else:
-        print("Required columns for hour × day_of_week heatmap not found.")
-    
-    print("Feature value impact analysis complete!")
+    print("Feature value impact analysis complete (Plotting moved to eda.py).")
 
 def analyze_weather_severity_impact(df):
     """Create detailed visualizations for weather severity impact on accidents."""

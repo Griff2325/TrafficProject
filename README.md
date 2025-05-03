@@ -10,10 +10,16 @@ Additionally, data files are large, with the raw data being ~ 3.0GB, processed d
 
 ```
 TrafficProject/
+├── .venv/                    # Python virtual environment (ignored by git)
 ├── data/
-│   ├── raw/                  # Original data files (US_Accidents_March23.csv)
+│   ├── geospatial/           # Shapefiles for geographic analysis (tl_2020_us_uac20.shp with supporting files)
 │   ├── processed/            # Cleaned and feature-engineered data (cleaned_accidents.csv, accidents_with_features.csv)
-│   └── geospatial/           # Shapefiles for geographic analysis (tl_2020_us_uac20.shp with supporting files)
+│   └── raw/                  # Original data files (US_Accidents_March23.csv)
+├── docs/
+│   ├── dataset_description.md # Description of the dataset columns.
+│   ├── eda_results.md        # Summary of EDA findings (source markdown - ignored by git).
+│   ├── eda_results.pdf       # Generated PDF report of EDA findings.
+│   └── model_development.md  # Detailed documentation of the model development process.
 ├── models/                   # Saved model files (xgb_model.json - ignored by git)
 ├── reports/
 │   └── figures/
@@ -23,15 +29,9 @@ TrafficProject/
 │   ├── features/             # Feature engineering & importance scripts (e.g., build_features.py, feature_importance_analysis.py)
 │   ├── models/               # Model development scripts (e.g., train_model.py)
 │   └── visualization/        # Visualization scripts (e.g., eda.py)
-├── docs/
-│   ├── model_development.md  # Detailed documentation of the model development process.
-│   ├── dataset_description.md # Description of the dataset columns.
-│   ├── eda_results.md        # Summary of EDA findings (source markdown - ignored by git).
-│   └── eda_results.pdf       # Generated PDF report of EDA findings.
-├── .venv/                    # Python virtual environment (ignored by git)
-├── requirements.txt          # Python dependencies
 ├── .gitignore                # Specifies intentionally untracked files
-└── README.md                 # This file
+├── README.md                 # This file
+└── requirements.txt          # Python dependencies
 ```
 
 ## Setup Instructions
@@ -174,9 +174,12 @@ Standard contribution guidelines apply (fork, branch, commit, PR).
 
 This project is licensed under the MIT License
 
+## AI Use Disclaimer
+
+Cursor was used for general assistance throughout the development process and documentation.
+
 ## Acknowledgments
 
 - Jetsteam2 through Indiana University for the computing resources provided
 - The University of Tennessee Knoxville
-- Teaching team for COSC426
-- Cursor AI for general assistance throughout the development process and documentation
+- The teaching team for COSC426
