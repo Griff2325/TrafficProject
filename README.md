@@ -1,4 +1,4 @@
-# US Traffic Accident Analysis Project
+# Predicting US Traffic Accident Severity using XGBoost and Feature Analysis
 
 This project analyzes US traffic accident data to identify patterns, correlations, and insights related to the **severity** of accidents. The primary goal is to build and interpret a machine learning model that predicts accident severity (levels 1-4) based on various temporal, geographical, weather, and road conditions. Additionally, Exploratory Data Analysis will be used to identify times of the year, week, and day that accidents are most prevelent as well as most severe.
 
