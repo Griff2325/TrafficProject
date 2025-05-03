@@ -14,19 +14,23 @@ TrafficProject/
 │   ├── raw/                  # Original data files (US_Accidents_March23.csv)
 │   ├── processed/            # Cleaned and feature-engineered data (cleaned_accidents.csv, accidents_with_features.csv)
 │   └── geospatial/           # Shapefiles for geographic analysis (tl_2020_us_uac20.shp with supporting files)
-├── models/                   # Saved model files (xgb_model.json)
+├── models/                   # Saved model files (xgb_model.json - ignored by git)
 ├── reports/
 │   └── figures/
-│       └── eda/              # Generated visualizations from EDA, model eval, and feature importance
+│       └── eda/              # Generated visualizations (ignored by git)
 ├── src/
 │   ├── data/                 # Data processing scripts (e.g., clean_data.py)
 │   ├── features/             # Feature engineering & importance scripts (e.g., build_features.py, feature_importance_analysis.py)
 │   ├── models/               # Model development scripts (e.g., train_model.py)
 │   └── visualization/        # Visualization scripts (e.g., eda.py)
 ├── docs/
-│   └── model_development.md  # Detailed documentation of the model development process.
-├── .venv/                    # Python virtual environment
+│   ├── model_development.md  # Detailed documentation of the model development process.
+│   ├── dataset_description.md # Description of the dataset columns.
+│   ├── eda_results.md        # Summary of EDA findings (source markdown - ignored by git).
+│   └── eda_results.pdf       # Generated PDF report of EDA findings.
+├── .venv/                    # Python virtual environment (ignored by git)
 ├── requirements.txt          # Python dependencies
+├── .gitignore                # Specifies intentionally untracked files
 └── README.md                 # This file
 ```
 
@@ -159,8 +163,8 @@ The project requires the following Python packages (see `requirements.txt`):
 
 For more details on the project methodology and findings, please refer to:
 - `docs/model_development.md` - Detailed documentation of the model development process.
-- `docs/project_completion.md` - Summary of project achievements, findings, and challenges.
-- `docs/poster_guidelines.md` - Suggestions for creating a project presentation poster.
+- `docs/dataset_description.md` - Detailed documentaion of dataset columns and features added
+- `docs/eda_results.md` - Summarizes key findings from EDA
 
 ## Contributing
 

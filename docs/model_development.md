@@ -10,19 +10,23 @@ TrafficProject/
 │   ├── raw/                  # Original data files (e.g., US_Accidents_March23.csv)
 │   ├── processed/            # Cleaned and feature-engineered data (e.g., cleaned_accidents.csv, accidents_with_features.csv)
 │   └── geospatial/           # Shapefiles for geographic analysis (e.g., tl_2020_us_uac20.shp)
-├── models/                   # Saved model files (e.g., xgb_model.json)
+├── models/                   # Saved model files (e.g., xgb_model.json - ignored by git)
 ├── reports/
 │   └── figures/
-│       └── eda/              # Generated visualizations from EDA, model eval, and feature importance
+│       └── eda/              # Generated visualizations (ignored by git)
 ├── src/
 │   ├── data/                 # Data processing scripts (e.g., clean_data.py)
 │   ├── features/             # Feature engineering & importance scripts (e.g., build_features.py, feature_importance_analysis.py)
 │   ├── models/               # Model development scripts (e.g., train_model.py)
 │   └── visualization/        # Visualization scripts (e.g., eda.py)
 ├── docs/
-│   └── model_development.md  # This file
-├── .venv/                    # Python virtual environment
+│   ├── model_development.md  # This file
+│   ├── dataset_description.md # Description of the dataset columns.
+│   ├── eda_results.md        # Summary of EDA findings (source markdown - ignored by git).
+│   └── eda_results.pdf       # Generated PDF report of EDA findings.
+├── .venv/                    # Python virtual environment (ignored by git)
 ├── requirements.txt          # Python dependencies
+├── .gitignore                # Specifies intentionally untracked files
 └── README.md                 # Project overview
 ```
 
