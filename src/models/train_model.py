@@ -35,7 +35,7 @@ def load_data():
     return df
 
 def prepare_data(df):
-    """Prepare data for modeling."""
+    """Prepare data for modeling with train/validation/test split."""
     # Select features for modeling
     feature_cols = [
         # Temporal features
@@ -55,7 +55,7 @@ def prepare_data(df):
     ]
     
     # Target variable: Severity (1-4)
-    X = df[feature_cols]
+    X = df[feature_cols].copy() # Use .copy() to avoid SettingWithCopyWarning
     y = df['Severity'] - 1  # Convert to 0-based indexing
     
     # Encode categorical variables
@@ -64,27 +64,40 @@ def prepare_data(df):
     for col in categorical_cols:
         X[col] = le.fit_transform(X[col])
     
-    # Split data with stratification
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+    # First split: Create train+validation (80%) and test (20%)
+    X_train_val, X_test, y_train_val, y_test = train_test_split(
+        X, y, test_size=0.20, random_state=42, stratify=y
     )
     
-    # Scale features
+    # Second split: Create train (75% of train_val -> 60% overall) and validation (25% of train_val -> 20% overall)
+    # Calculate split ratio for the second split (0.25 of the 80% is 20% overall)
+    val_size_ratio = 0.25 # 20% / 80%
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train_val, y_train_val, test_size=val_size_ratio, random_state=42, stratify=y_train_val
+    )
+    
+    print(f"Data split: Train={len(X_train)}, Validation={len(X_val)}, Test={len(X_test)}")
+    
+    # Scale features: Fit scaler ONLY on the training set
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
+    # Transform validation and test sets using the SAME scaler
+    X_val_scaled = scaler.transform(X_val)
     X_test_scaled = scaler.transform(X_test)
     
-    return X_train_scaled, X_test_scaled, y_train, y_test, feature_cols
+    # Return all sets
+    return X_train_scaled, X_val_scaled, X_test_scaled, y_train, y_val, y_test, feature_cols
 
-def train_model(X_train, y_train, X_test, y_test):
-    """Train XGBoost model with proper class imbalance handling."""
-    # Calculate class weights
+def train_model(X_train, y_train, X_val, y_val, X_test, y_test):
+    """Train XGBoost model with validation set for early stopping."""
+    # Calculate class weights (using training data only)
     class_counts = y_train.value_counts()
     class_weights = {i: sum(class_counts) / (len(class_counts) * count) 
                     for i, count in enumerate(class_counts)}
     
     # Create DMatrix for XGBoost
     dtrain = xgb.DMatrix(X_train, label=y_train)
+    dval = xgb.DMatrix(X_val, label=y_val) # Create DMatrix for validation set
     dtest = xgb.DMatrix(X_test, label=y_test)
     
     # Set parameters for full dataset
@@ -96,34 +109,33 @@ def train_model(X_train, y_train, X_test, y_test):
         'subsample': 0.8,
         'colsample_bytree': 0.8,
         'min_child_weight': 1,
-        # 'scale_pos_weight': [class_weights[i] for i in range(4)], # Often better handled by sample_weight if supported directly or adjusting objectives
         'eval_metric': 'merror',
-        'tree_method': 'hist',  # Use histogram-based algorithm for efficiency
-        'grow_policy': 'lossguide'  # Grow trees based on loss reduction
+        'tree_method': 'hist', 
+        'grow_policy': 'lossguide'
     }
     
     # Dictionary to store evaluation results
     evals_result = {}
     
-    # Train model with more rounds for full dataset
+    # Train model with validation set for early stopping
     model = xgb.train(
         params,
         dtrain,
-        num_boost_round=200,  # Increased number of rounds
-        evals=[(dtrain, 'train'), (dtest, 'test')],
-        evals_result=evals_result, # Store evaluation results
-        early_stopping_rounds=20,  # Increased patience
-        verbose_eval=20  # Less frequent logging
+        num_boost_round=200, 
+        evals=[(dtrain, 'train'), (dval, 'validation')], # Use validation set for evals
+        evals_result=evals_result,
+        early_stopping_rounds=20, 
+        verbose_eval=20 
     )
     
     # Save the model
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     model.save_model(MODELS_DIR / 'xgb_model.json')
     
-    return model, evals_result # Return model and training history
+    return model, evals_result
 
 def evaluate_model(model, X_test, y_test):
-    """Evaluate model performance."""
+    """Evaluate model performance on the held-out test set."""
     # Make predictions
     dtest = xgb.DMatrix(X_test)
     y_pred = model.predict(dtest)
@@ -133,7 +145,7 @@ def evaluate_model(model, X_test, y_test):
     y_pred_1based = y_pred + 1
     
     # Print classification report
-    print("\nClassification Report:")
+    print("\nClassification Report (on Test Set):")
     print(classification_report(y_test_1based, y_pred_1based))
     
     # Plot confusion matrix
@@ -146,7 +158,7 @@ def evaluate_model(model, X_test, y_test):
     # Plot heatmap with custom axis labels
     sns.heatmap(cm, annot=True, fmt='d', cmap='viridis', 
                 xticklabels=axis_labels, yticklabels=axis_labels)
-    plt.title('Confusion Matrix')
+    plt.title('Confusion Matrix (on Test Set)')
     plt.xlabel('Predicted Severity')
     plt.ylabel('Actual Severity')
     plt.tight_layout()
@@ -156,7 +168,8 @@ def evaluate_model(model, X_test, y_test):
 def plot_training_history(evals_result):
     """Plots the training and validation classification error curves."""
     train_error = evals_result['train']['merror']
-    test_error = evals_result['test']['merror']
+    # Use 'validation' key now instead of 'test' for the validation curve
+    validation_error = evals_result['validation']['merror']
     epochs = range(1, len(train_error) + 1)
     
     # --- Debugging Print Statements --- 
@@ -164,15 +177,14 @@ def plot_training_history(evals_result):
     print(f"First 5: {train_error[:5]}")
     print(f"Last 5: {train_error[-5:]}")
     print("--- Validation Error Rate Values ---")
-    print(f"First 5: {test_error[:5]}")
-    print(f"Last 5: {test_error[-5:]}")
+    print(f"First 5: {validation_error[:5]}")
+    print(f"Last 5: {validation_error[-5:]}")
     print("-----------------------------")
     # --- End Debugging --- 
     
     plt.figure(figsize=(12, 6))
-    # Use different styles to ensure visibility
     plt.plot(epochs, train_error, 'b--', label='Training Error Rate')
-    plt.plot(epochs, test_error, 'r-', label='Validation Error Rate')
+    plt.plot(epochs, validation_error, 'r-', label='Validation Error Rate') # Use validation error here
     plt.title('Training and Validation Classification Error')
     plt.xlabel('Boosting Rounds')
     plt.ylabel('Classification Error Rate')
@@ -180,25 +192,27 @@ def plot_training_history(evals_result):
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(REPORTS_DIR / 'training_performance.png')
-    plt.close() # Close the plot figure
+    plt.close()
     print(f"Training performance plot saved to {REPORTS_DIR / 'training_performance.png'}")
 
 def main():
     """Main function to run the model training and evaluation."""
-    # Create reports directory if it doesn't exist
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     
     print("Loading data...")
     df = load_data()
     
     print("Preparing data for modeling...")
-    X_train, X_test, y_train, y_test, feature_cols = prepare_data(df)
+    # Update variables received from prepare_data
+    X_train_scaled, X_val_scaled, X_test_scaled, y_train, y_val, y_test, feature_cols = prepare_data(df)
     
     print("Training model...")
-    model, evals_result = train_model(X_train, y_train, X_test, y_test)
+    # Pass validation data to train_model
+    model, evals_result = train_model(X_train_scaled, y_train, X_val_scaled, y_val, X_test_scaled, y_test)
     
-    print("Evaluating model...")
-    evaluate_model(model, X_test, y_test)
+    print("Evaluating final model on Test Set...")
+    # Evaluate function now correctly uses the untouched test set
+    evaluate_model(model, X_test_scaled, y_test)
     
     print("Plotting training history...")
     plot_training_history(evals_result)

@@ -2,27 +2,29 @@
 
 This project analyzes US traffic accident data to identify patterns, correlations, and insights related to the **severity** of accidents. The primary goal is to build and interpret a machine learning model that predicts accident severity (levels 1-4) based on various temporal, geographical, weather, and road conditions. Additionally, Exploratory Data Analysis will be used to identify times of the year, week, and day that accidents are most prevelent as well as most severe.
 
-Note that this project was initially run through Jetstream2 on the flavor g3.large; results may be much slower if run on a local machine.
+Note that this project was initially run through Jetstream2 on the flavor g3.large; running all the scripts in this environment will take around 30 minutes. Results may be much slower if run on a local machine.
+
+Additionally, data files are large, with the raw data being ~ 3.0GB, processed data files being around another 6.5GB, and US Census Shape files being around 120MB. Ensure adequate storage is aviailable on your system.
 
 ## Project Structure
 
 ```
 TrafficProject/
 ├── data/
-│   ├── raw/                  # Original data files (e.g., US_Accidents_March23.csv)
-│   ├── processed/            # Cleaned and feature-engineered data (e.g., cleaned_accidents.csv, accidents_with_features.csv)
-│   └── geospatial/           # Shapefiles for geographic analysis (e.g., tl_2020_us_uac20.shp)
-├── models/                   # Saved model files (e.g., xgb_model.json)
+│   ├── raw/                  # Original data files (US_Accidents_March23.csv)
+│   ├── processed/            # Cleaned and feature-engineered data (cleaned_accidents.csv, accidents_with_features.csv)
+│   └── geospatial/           # Shapefiles for geographic analysis (tl_2020_us_uac20.shp with supporting files)
+├── models/                   # Saved model files (xgb_model.json)
 ├── reports/
 │   └── figures/
 │       └── eda/              # Generated visualizations from EDA, model eval, and feature importance
 ├── src/
 │   ├── data/                 # Data processing scripts (e.g., clean_data.py)
-│   ├── features/             # Feature engineering & importance scripts (e.g., analyze_features.py, feature_importance_analysis.py)
+│   ├── features/             # Feature engineering & importance scripts (e.g., build_features.py, feature_importance_analysis.py)
 │   ├── models/               # Model development scripts (e.g., train_model.py)
 │   └── visualization/        # Visualization scripts (e.g., eda.py)
 ├── docs/
-│   ├── model_development.md
+│   └── model_development.md  # Detailed documentation of the model development process.
 ├── .venv/                    # Python virtual environment
 ├── requirements.txt          # Python dependencies
 └── README.md                 # This file
@@ -69,9 +71,9 @@ Place the downloaded file in the `data/raw/` directory.
 This project uses geographic boundaries to classify accidents as occurring in urban or suburban areas more accurately. You need to download the necessary shapefile from the US Census Bureau:
 
 1.  **Download the Shapefile:** Go to the [2020 TIGER/Line® Shapefiles: Urban Areas](https://www.census.gov/cgi-bin/geo/shapefiles/index.php?year=2020&layergroup=Urban+Areas) page.
-2.  Download the **nationwide** shapefile for "Urban Areas". The direct link might change, but look for `tl_2020_us_uac20.zip` or similar.
+2.  Download the **2020 Urban Areas National File** shapefile.
 3.  **Unzip the File:** Extract the contents of the downloaded zip file.
-4.  **Place the Files:** Move the extracted files (including `.shp`, `.shx`, `.dbf`, `.prj`, etc.) into the `data/geospatial/` directory within this project.
+4.  **Place the Files:** Move all of the extracted files (including `.shp`, `.shx`, `.dbf`, `.prj`, etc.) into the `data/geospatial/` directory within this project.
 The feature engineering script expects the main shapefile to be located at `data/geospatial/tl_2020_us_uac20.shp`.
 
 If the shapefile is not found, the feature engineering script will fall back to a less accurate, state-based estimation for the urban/suburban classification.
@@ -95,7 +97,7 @@ python3 src/data/clean_data.py
 Run the script to create engineered features:
 
 ```bash
-python3 src/features/analyze_features.py
+python3 src/features/build_features.py
 ```
 *   **Input:** `data/processed/cleaned_accidents.csv`
 *   **Output:** Creates `data/processed/accidents_with_features.csv`
@@ -122,13 +124,13 @@ python3 src/features/feature_importance_analysis.py
 
 ### 5. Exploratory Data Analysis (EDA)
 
-Run the consolidated EDA script:
+Run the EDA script:
 
 ```bash
 python3 src/visualization/eda.py
 ```
 *   **Input:** `data/processed/cleaned_accidents.csv` and `data/processed/accidents_with_features.csv`.
-*   **Output:** Generates various EDA plots (temporal, geographical, correlations, road features, urban/suburban comparisons) in `reports/figures/eda/`. Uses sampling for the density heatmap.
+*   **Output:** Generates various EDA plots (temporal, geographical, correlations, road features, urban/suburban comparisons) in `reports/figures/eda/`. Uses sampling for the density heatmap due to compute restraints.
 
 ## Key Analyses Performed
 
@@ -173,4 +175,4 @@ This project is licensed under the MIT License
 - Jetsteam2 through Indiana University for the computing resources provided
 - The University of Tennessee Knoxville
 - Teaching team for COSC426
-- Cursor AI for general assistance through the development process
+- Cursor AI for general assistance throughout the development process and documentation

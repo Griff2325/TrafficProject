@@ -56,7 +56,7 @@ reports/figures/*
 docs/project_plan.md
 docs/project_summary.md
 docs/poster_guidelines.md
-docs/eda_results.md
+# docs/eda_results.md <-- REMOVE THIS LINE TO ALLOW TRACKING
 docs/project_completion.md
 
 # Jupyter Notebook

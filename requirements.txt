@@ -1,36 +1,38 @@
-# Data Processing
-pandas>=1.5.0
+# Data Processing / Numeric
 numpy>=1.21.0
+pandas>=1.5.0
 scipy
 
 # Geospatial Processing
-geopy
-geopandas
 folium
+geopandas
+geopy
 shapely
 
-# Visualization
-matplotlib>=3.5.0
-seaborn>=0.11.0
-plotly
+# Imbalanced Data Handling
+imbalanced-learn
+
+# Machine Learning
+scikit-learn>=1.0.0
+shap>=0.41.0
+xgboost
+
+# Optimization
+scikit-optimize
 
 # Statistical Analysis
 statsmodels
 
-# Machine Learning
-scikit-learn>=1.0.0
-xgboost
-shap>=0.41.0
-imbalanced-learn
-scikit-optimize
-
-# Time Series
-# prophet # Note: Installation can sometimes be tricky, especially on M1. Add back if definitely needed.
-
-# Optional: For potential large data handling
-# dask
-# pyspark
-
-# Added from the code block
-torch>=2.0.0
+# Time / Holidays
 holidays>=0.14.0 
+
+# Visualization
+matplotlib>=3.5.0
+plotly
+seaborn>=0.11.0
+
+# --- Optional / Environment Specific --- 
+# torch>=2.0.0 # Potentially for deep learning or if required by another lib
+# prophet # Time Series Forecasting (Complex install)
+# dask # Parallel Computing
+# pyspark # Big Data Processing 

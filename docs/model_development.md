@@ -16,11 +16,11 @@ TrafficProject/
 │       └── eda/              # Generated visualizations from EDA, model eval, and feature importance
 ├── src/
 │   ├── data/                 # Data processing scripts (e.g., clean_data.py)
-│   ├── features/             # Feature engineering & importance scripts (e.g., analyze_features.py, feature_importance_analysis.py)
+│   ├── features/             # Feature engineering & importance scripts (e.g., build_features.py, feature_importance_analysis.py)
 │   ├── models/               # Model development scripts (e.g., train_model.py)
 │   └── visualization/        # Visualization scripts (e.g., eda.py)
 ├── docs/
-│   └─── model_development.md
+│   └── model_development.md  # This file
 ├── .venv/                    # Python virtual environment
 ├── requirements.txt          # Python dependencies
 └── README.md                 # Project overview
@@ -31,7 +31,7 @@ TrafficProject/
 ### 1. Data Cleaning (`src/data/clean_data.py`)
 - Loads raw data.
 - Handles missing values, duplicates, or initial inconsistencies.
-- Saves cleaned data (e.g., `data/processed/cleaned_accidents.csv`).
+- Saves cleaned data (`data/processed/cleaned_accidents.csv`).
 
 ### 2. Feature Engineering (`src/features/build_features.py`)
 
@@ -53,16 +53,17 @@ The final feature set used for modeling contains 75 features.
 - **Data Preparation:**
     - Selects features used for modeling.
     - Encodes categorical variables (e.g., LabelEncoder).
-    - Splits data into training/testing sets (stratified).
-    - Scales numerical features (StandardScaler).
+    - Splits data into training (60%), validation (20%), and testing (20%) sets using stratification (`train_test_split` applied twice).
+    - Scales numerical features (StandardScaler fit *only* on training data, then applied to all sets).
 - **Model:** XGBoost Classifier (`xgb.train`).
     - Objective: `multi:softmax` (4 classes).
     - Handles class imbalance using `scale_pos_weight` (calculated from training data).
-    - Uses early stopping to prevent overfitting.
+    - Uses early stopping (`early_stopping_rounds=20`) based on performance (`eval_metric='merror'`) on the dedicated **validation set** (`evals=[(dtrain, 'train'), (dval, 'validation')]`).
 - **Evaluation:**
-    - Predicts on the test set.
-    - Prints a classification report.
-    - Generates and saves a confusion matrix (`reports/figures/eda/confusion_matrix.png`).
+    - Predicts on the held-out **test set**.
+    - Prints a classification report (on the test set).
+    - Generates and saves a confusion matrix (on the test set) (`reports/figures/eda/confusion_matrix.png`).
+    - Plots training vs. validation error curves (`reports/figures/eda/training_performance.png`).
 - **Output:** Trained model (`models/xgb_model.json`).
 
 ### 4. Feature Importance Analysis (`src/features/feature_importance_analysis.py`)
@@ -88,26 +89,26 @@ The final feature set used for modeling contains 75 features.
 
 ### Model Performance
 ```
-Classification Report:
+Classification Report (on Test Set):
               precision    recall  f1-score   support
 
            1       0.66      0.01      0.03     13473
            2       0.80      0.99      0.89   1231396
            3       0.54      0.03      0.07    259868
-           4       0.59      0.01      0.01     40942
+           4       0.58      0.01      0.01     40942
 
     accuracy                           0.80   1545679
-   macro avg       0.65      0.26      0.25   1545679
+   macro avg       0.64      0.26      0.25   1545679
 weighted avg       0.75      0.80      0.72   1545679
 ```
-*   **Confusion Matrix:** Visualizes prediction accuracy across the 4 severity classes (saved in `reports/figures/eda/`).
-*   **Training Performance Plot:** Shows Training vs. Validation Classification Error (`merror`) over boosting rounds (saved as `training_performance.png` in `reports/figures/eda/`).
+*   **Confusion Matrix:** Visualizes prediction accuracy across the 4 severity classes (saved in `reports/figures/eda/confusion_matrix.png`). Evaluated on the final Test Set.
+*   **Training Performance Plot:** Shows Training vs. Validation Classification Error (`merror`) over boosting rounds (saved as `training_performance.png` in `reports/figures/eda/`). Validation error calculated on the dedicated Validation Set.
 *   **Key Observations:**
     *   The model generally achieves high accuracy (80%) due to the prevalence of the majority class (Severity 2).
-    *   Performance (precision/recall) on minority classes (Severity 1, 3, 4) is typically much lower due to severe class imbalance (Recall: ~1% for Sev 1, ~3% for Sev 3, ~1% for Sev 4).
+    *   Performance (precision/recall) on minority classes (Severity 1, 3, 4) remains low due to severe class imbalance (Recall: ~1% for Sev 1, ~3% for Sev 3, ~1% for Sev 4).
     *   Training and validation error rates track very closely, indicating minimal overfitting according to this metric.
-    *   Final Training Error Rate (`merror`): `~0.20155`
-    *   Final Validation Error Rate (`merror`): `~0.20181`
+    *   Final Training Error Rate (`merror`): `~0.20148`
+    *   Final Validation Error Rate (`merror`): `~0.20188`
 
 ### Feature Importance
 *   SHAP plots (global and per-class) identify the most influential features for the model's predictions overall and for each severity level.
@@ -126,7 +127,7 @@ weighted avg       0.75      0.80      0.72   1545679
     *   **Future:** Further optimization, exploring Dask or other parallel processing frameworks if needed.
 3.  **Feature Interpretation:**
     *   **Problem:** Understanding *why* a feature is important requires careful analysis.
-    *   **Solution:** Used SHAP for local and global explanations. EDA plots help visualize relationships (e.g., urban/suburban differences, intersection feature impacts).
+    *   **Solution:** Used SHAP for local and global explanations. EDA plots help visualize relationships (urban/suburban differences, intersection feature impacts).
 
 ## Technical Notes
 

@@ -713,39 +713,107 @@ def analyze_urban_suburban(df):
     
     print("Urban vs. Suburban analysis complete.")
 
+def analyze_severity_heatmaps(df):
+    """Generates heatmaps showing mean accident severity based on time combinations."""
+    print("Generating severity heatmaps...")
+
+    # --- Heatmap 1: Mean Severity by Hour of Day vs. Day of Week --- 
+    if 'start_hour' in df.columns and 'start_day_of_week' in df.columns and 'Severity' in df.columns:
+        print("Generating heatmap of mean severity by hour and day of week...")
+        plt.figure(figsize=(14, 8))
+        
+        # Create pivot table for mean severity
+        # Group by hour and day_of_week, get mean of Severity, then unstack
+        pivot_severity_hour_day = df.groupby(['start_hour', 'start_day_of_week'])['Severity'].mean().unstack()
+        
+        # Reindex columns to ensure correct day order (0=Monday to 6=Sunday)
+        pivot_severity_hour_day = pivot_severity_hour_day.reindex(columns=range(7))
+        
+        # Plot heatmap
+        sns.heatmap(pivot_severity_hour_day, cmap='viridis', annot=True, fmt=".2f", linewidths=.5)
+        
+        # Set ticks and labels
+        days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        plt.xticks(ticks=np.arange(len(days)) + 0.5, labels=days, rotation=0)
+        plt.yticks(rotation=0)
+        plt.title('Mean Accident Severity by Hour and Day of Week')
+        plt.xlabel('Day of Week')
+        plt.ylabel('Hour of Day')
+        plt.tight_layout()
+        plt.savefig(REPORTS_DIR / 'heatmap_hour_dayofweek_severity.png')
+        plt.close()
+        print("Hour vs Day of Week severity heatmap generated.")
+    else:
+        print("Skipping Hour vs Day of Week severity heatmap: Missing required columns.")
+
+    # --- Heatmap 2: Mean Severity by Time of Day vs. Day of Week --- 
+    if 'time_of_day' in df.columns and 'start_day_of_week' in df.columns and 'Severity' in df.columns:
+        print("Generating heatmap of mean severity by time of day and day of week...")
+        plt.figure(figsize=(12, 6))
+
+        # Define the order for time_of_day
+        time_order = ['Morning', 'Afternoon', 'Evening', 'Night']
+        
+        # Ensure time_of_day is categorical with the correct order
+        if pd.api.types.is_categorical_dtype(df['time_of_day']):
+            df['time_of_day'] = df['time_of_day'].cat.reorder_categories(time_order, ordered=True)
+        else:
+            df['time_of_day'] = pd.Categorical(df['time_of_day'], categories=time_order, ordered=True)
+
+        # Create pivot table for mean severity
+        pivot_severity_time_day = df.groupby(['time_of_day', 'start_day_of_week'], observed=False)['Severity'].mean().unstack()
+        
+        # Reindex columns for day order
+        pivot_severity_time_day = pivot_severity_time_day.reindex(columns=range(7))
+
+        # Plot heatmap
+        sns.heatmap(pivot_severity_time_day, cmap='viridis', annot=True, fmt=".2f", linewidths=.5)
+
+        # Set ticks and labels
+        days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        plt.xticks(ticks=np.arange(len(days)) + 0.5, labels=days, rotation=0)
+        plt.yticks(rotation=0)
+        plt.title('Mean Accident Severity by Time of Day and Day of Week')
+        plt.xlabel('Day of Week')
+        plt.ylabel('Time of Day')
+        plt.tight_layout()
+        plt.savefig(REPORTS_DIR / 'heatmap_timeofday_dayofweek_severity.png')
+        plt.close()
+        print("Time of Day vs Day of Week severity heatmap generated.")
+    else:
+        print("Skipping Time of Day vs Day of Week severity heatmap: Missing required columns ('time_of_day', 'start_day_of_week', 'Severity').")
+
 def main():
     """Main function to run the EDA."""
-    print("Starting targeted EDA...")
+    print("Starting Exploratory Data Analysis...")
     create_output_directories()
+
+    print("Loading cleaned data...")
+    df_cleaned = load_data()
     
-    print("Loading basic data...")
-    basic_df = load_data()
-    
-    print("Analyzing temporal patterns...")
-    analyze_temporal_patterns(basic_df)
-    
-    print("Analyzing geographical patterns...")
-    analyze_geographical_patterns(basic_df)
-    
-    print("Analyzing weather patterns...")
-    analyze_weather_patterns(basic_df)
-    
-    print("Analyzing correlations...")
-    analyze_correlations(basic_df)
-    
-    print("Analyzing road features...")
-    analyze_road_features(basic_df)
-    
-    print("Analyzing intersection feature combinations...")
-    analyze_intersection_combinations(basic_df)
-    
-    # Load data with features for urban-suburban analysis
-    feature_df = load_data_with_features()
-    
-    # Run urban-suburban analysis
-    analyze_urban_suburban(feature_df)
-    
-    print("EDA complete. Visualizations saved to reports/figures/eda/")
+    # Run analyses that primarily use cleaned data
+    analyze_temporal_patterns(df_cleaned)
+    analyze_geographical_patterns(df_cleaned)
+    analyze_weather_patterns(df_cleaned)
+    analyze_road_features(df_cleaned)
+    analyze_intersection_combinations(df_cleaned)
+    analyze_severity_patterns(df_cleaned) # Uses Severity from cleaned data
+    analyze_correlations(df_cleaned)
+
+    # Load data with features for analyses requiring them
+    try:
+        df_features = load_data_with_features()
+        
+        # Run analyses that use derived features
+        analyze_urban_suburban(df_features)
+        analyze_severity_heatmaps(df_features) # Call the new function here
+        
+    except FileNotFoundError:
+        print("\nWarning: accidents_with_features.csv not found. Skipping analyses requiring derived features (Urban/Suburban, Severity Heatmaps).")
+    except ValueError as e:
+        print(f"\nWarning: Skipping analyses requiring derived features due to error: {e}")
+
+    print("\nEDA complete! Check the reports/figures/eda directory for visualizations.")
 
 if __name__ == "__main__":
     main() 
